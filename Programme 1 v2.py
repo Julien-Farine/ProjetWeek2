@@ -1,20 +1,9 @@
-# Transformer les intensités en entiers entre 0 et 255, puis centrer pour se ramener entre -128 et 127
-image = image.astype(np.float32) - 128
+import numpy as np
+import math
+from matplotlib import pyplot as plt
+import time
 
-# Définir la matrice de passage en fréquentiel de la DCT2
-def dct2(block):
-    return np.array([[sum(block[x, y] * math.cos((2*x+1)*u*math.pi/16)*math.cos((2*y+1)*v*math.pi/16)
-                        for x in range(8) for y in range(8))
-                        * (1/4) * (1/math.sqrt(2) if u == 0 else 1) * (1/math.sqrt(2) if v == 0 else 1)
-                        for v in range(8)] for u in range(8)])
-
-def idct2(block):
-    return np.array([[sum((1/math.sqrt(2) if u == 0 else 1) * (1/math.sqrt(2) if v == 0 else 1) 
-                        * block[u, v] * math.cos((2*x+1)*u*math.pi/16)*math.cos((2*y+1)*v*math.pi/16)
-                        for u in range(8) for v in range(8)) * (1/4)
-                        for y in range(8)] for x in range(8)])
-
-# Matrice de quantification (exemple)
+#Matrice de quantification pour jpeg
 Q = np.array([[16, 11, 10, 16, 24, 40, 51, 61],
               [12, 12, 14, 19, 26, 58, 60, 55],
               [14, 13, 16, 24, 40, 57, 69, 56],
@@ -24,45 +13,87 @@ Q = np.array([[16, 11, 10, 16, 24, 40, 51, 61],
               [49, 64, 78, 87, 103, 121, 120, 101],
               [72, 92, 95, 98, 112, 100, 103, 99]])
 
-def compress_block(block, Q):
-    D = dct2(block)
-    D_q = np.round(D / Q)
-    return D_q
 
-compressed_image = np.zeros_like(image)
 
-for i in range(0, height, 8):
-    for j in range(0, width, 8):
-        block = image[i:i+8, j:j+8]
-        compressed_image[i:i+8, j:j+8] = compress_block(block, Q)
+img_1=plt.imread(r'C:\Users\Gab\Code\Projet DTC\img_1.png')
 
-def decompress_block(block, Q):
-    D_q = block * Q
-    return idct2(D_q)
 
-decompressed_image = np.zeros_like(image)
+def show(img):
+    plt.figure()
+    plt.imshow(img)
+    #plt.axis('off')
+  
 
-for i in range(0, height, 8):
-    for j in range(0, width, 8):
-        block = compressed_image[i:i+8, j:j+8]
-        decompressed_image[i:i+8, j:j+8] = decompress_block(block, Q)
+show(img_1)
 
-# Re-transformer les valeurs entre -128 et 127 en réels entre 0 et 255
-decompressed_image = np.clip(decompressed_image + 128, 0, 255).astype(np.uint8)
+#dimension de l'image
+h,w=img_1.shape[:2]
+h=h-int(np.mod(h,8))
+w=w-int(np.mod(w,8))
 
-# Sauvegarder l'image
-imsave('image_decompressee.jpg', decompressed_image, cmap='gray')
+#rognage de l'image en multiple de 8
+img_1=img_1[:h,:w,:]
+img_2=img_1.copy()
+
+
+couleurs=[]
+for p in range(0,3):
+    img_2=img_1[:,:,p]
+    h=img_2.shape[0]
+    w=img_2.shape[1]
+
+    #centrage des valeurs rgb
+    img_128=img_2-np.ones([h,w])*128
+
+    start=time.time()
+    for m in range(0,h,8):
+        for n in range(0,w,8):
+            M=img_128[m:m+8,n:n+8]
+            P=np.zeros_like(M)
+            for k in range(0,8):
+                for i in range(0,8):
+                    if k==0:
+                        P[k,i]=P[k,i]/np.sqrt(2)
+                    else:
+                        P[k,i]=np.cos(((2*i+1)*k*np.pi)/16)/2
+            P_T=P.T
+            D=np.dot(np.dot(P,M),P_T)
+            if m==0 or n==0 or m==7 or n==7 :  #à voir
+                img_128[m:m+8,n:n+8]=0
+            img_128[m:m+8,n:n+8]=abs(np.divide(D,Q))
+    ecart=time.time()-start
+    img_129=img_128.copy()
+
+    taux_decomp=np.count_nonzero(img_128)
+
+    for m in range(0,h,8):
+        for n in range(0,w,8):
+            D=img_129[m:m+8,n:n+8]*Q
+            M=np.dot(np.dot(P_T,D),P)
+            M=(M+128)/255
+            img_129[m:m+8,n:n+8]=M
+    img_129 = np.zeros((h, w), dtype=float)
+    couleurs.append(img_129)
+    print(len(couleurs))
+img_finale=np.stack((couleurs[0],couleurs[1],couleurs[2]),axis=-1)
 
 # Comparaison des matrices en norme L2 relative
-difference = np.linalg.norm(image - decompressed_image, ord='fro') / np.linalg.norm(image, ord='fro')
+difference = np.linalg.norm(img_1 - img_finale) / np.linalg.norm(img_1)
 print(f"Différence en norme L2 relative : {difference}")
 
-# Affichage des images pour comparaison visuelle
-plt.figure()
+print(D)
+show(M)
+#show(img_128)
+#show(img_129)
+print(img_finale.shape)
+print(img_1.shape)
+print(np.count_nonzero(D))
+print(ecart)
+print(couleurs)
+
+plt.figure(6)
 plt.subplot(1, 2, 1)
-plt.title('Image Originale')
-plt.imshow(image, cmap='gray')
+plt.imshow(img_1)
 plt.subplot(1, 2, 2)
-plt.title('Image Décompressée')
-plt.imshow(decompressed_image, cmap='gray')
+plt.imshow(img_finale)
 plt.show()
