@@ -102,3 +102,30 @@ plt.imshow(img_1)
 plt.subplot(1, 2, 2)
 plt.imshow(img_finale)
 plt.show()
+
+
+
+
+"""
+Image avec flou gaussien sans filtre
+
+Temps de calcul pour la m�thode par le calcul: 0.77 secondes
+Diff�rence obtenue via la m�thode passant par le calcul : 4.17%
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-0.053183876..1.1265721].
+Temps de calcul pour la m�thode cv2: 0.44 secondes
+Diff�rence en pourcentage entre l'image compress�e et l'image d'origine par cv2 : 1.54%
+La m�thode passant par la librairie cv2 est meilleurs de 2.63%
+
+
+Image avec flou gaussien avec filtre
+
+Temps de calcul pour la m�thode par le calcul: 1.17 secondes
+Diff�rence obtenue via la m�thode passant par le calcul : 6.07%
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-0.14445612..1.1840973].
+Temps de calcul pour la m�thode cv2: 0.43 secondes
+Diff�rence en pourcentage entre l'image compress�e et l'image d'origine par cv2 : 1.54%
+La m�thode passant par la librairie cv2 est meilleurs de 4.54%
+"""
+
+
+
