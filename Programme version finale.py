@@ -19,7 +19,6 @@ path_image=selectionner_fichier()
 
 
 
-
 ## Méthode par le calcul en utilisant matplotlib
 
 # Lecture de l'image
@@ -237,6 +236,7 @@ plt.imshow(image_finale_cv2)
 plt.axis('off')
 
 plt.show()
+
 
 
 
